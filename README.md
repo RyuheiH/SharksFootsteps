@@ -11,3 +11,8 @@ This game uses OpenCV to recognize your face, and you are supposed to hide your 
 <img width="1392" alt="Screenshot 2023-04-01 at 23 02 28" src="https://user-images.githubusercontent.com/109459402/229293795-0628a030-ee13-4690-a752-32d353e25bed.png">
 
 <img width="1392" alt="Screenshot 2023-04-01 at 23 02 15" src="https://user-images.githubusercontent.com/109459402/229293802-84c37df7-bfbf-4557-a3a3-00224a4de7ec.png">
+
+Python 3.9.16
+OpenCV 4.7.0
+pygame 2.3.0
+pillow 8.4.0
