@@ -6,6 +6,6 @@ This game was initially made as an interactive art with my schoolmates in 2021, 
 Later I have decided brush the system up and make a game out of it.
 
 This game uses OpenCV to recognize your face, and you are supposed to hide your face when Shark comes up. You can try to take a picture with Shark by smilling without getting noticed by it.
-![Screenshot 2023-04-01 at 22 58 52](https://user-images.githubusercontent.com/109459402/229293602-c4dc6f39-094b-4070-acbc-33a247fe52fc.jpg)
-![Screenshot 2023-04-01 at 22 58 46](https://user-images.githubusercontent.com/109459402/229293614-d295c1d1-44ad-4254-8790-24e8bf8193b8.jpg)
-![Screenshot 2023-04-01 at 22 59 58](https://user-images.githubusercontent.com/109459402/229293660-c3088696-92c8-4014-b9c2-45da6ba38850.jpg)
+<img width="1392" alt="Screenshot 2023-04-01 at 23 02 28" src="https://user-images.githubusercontent.com/109459402/229293795-0628a030-ee13-4690-a752-32d353e25bed.png">
+<img width="1392" alt="Screenshot 2023-04-01 at 23 02 23" src="https://user-images.githubusercontent.com/109459402/229293797-2fad9e41-6a11-4a09-85c5-53c98a436a6d.png">
+<img width="1392" alt="Screenshot 2023-04-01 at 23 02 15" src="https://user-images.githubusercontent.com/109459402/229293802-84c37df7-bfbf-4557-a3a3-00224a4de7ec.png">
