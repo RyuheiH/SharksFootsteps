@@ -6,18 +6,23 @@ import pygame.mixer
 from PIL import Image, ImageDraw, ImageFont
 
 
+"""
+There are 6 displays in general, and from main function, 5 of them can be shown. 
+Those startpage(), camera(), show_page(), show_screenshot(), functions will show a video or a screen, so each page in the game runs with each function.
+attack_shark() is called from play_game() when its game over.
+"""
 
+def main(): #this main is in charge of showing the displays, and after pressing Q in those displays, they will come back here.
 
-def main():
-    pygame.mixer.init() #initial
+    pygame.mixer.init() #initial music function
     while True:
-        pygame.mixer.music.load("music/氷雨.mp3") #bgm
-        enter_sound = pygame.mixer.Sound("music/決定ボタンを押す8.mp3")  # サウンドをロード
+        pygame.mixer.music.load("music/氷雨.mp3") # load bgm
+        enter_sound = pygame.mixer.Sound("music/決定ボタンを押す8.mp3")  #load SE
         pygame.mixer.music.play(1) #-1 means infinite loop
         key = startpage()
-        if key == 13: #enter key
-            enter_sound.play()  # サウンドを再生
-            camera()
+        if key == 13: #13 stands for enter key
+            enter_sound.play()  #play SE
+            play_game() #play_game function is in charge of showing the main game
 
         elif key == ord('h'):
             cv2.destroyAllWindows()
@@ -68,18 +73,14 @@ def show_screenshot():
 
     for n in files:
         img = cv2.imread(n)
-
-        imgH, imgW = img.shape[:2]
-        position = [imgW//2,(imgH//1)-(100)]
-        fontPIL = 'DoHyeon-Regular.ttf'
         text = "Press Enter to see other pictures"
-
-        img = cv2_putText_5(img = img,text = text,org = position,fontFace = fontPIL,fontScale = 30,color = (255, 255, 255),mode = 2)
+        img = cv2_putText_5(img = img,text = text,position = [2,3],fontScale = 30,color = (255, 255, 255),mode = 2)
         
         cv2.imshow(f'{n}',img)
         
-        key = cv2.waitKey(0) & 0xFF #waits for the key command
 
+        
+        key = cv2.waitKey(0) & 0xFF #waits for the key command
         if key == ord('q'): #when q is pressed, it quits the while loop
             cv2.destroyAllWindows()
             break
@@ -107,29 +108,9 @@ def startpage():
 
 
 
-def merge_images(bg, fg_alpha, s_x, s_y): #2つの画像のサイズが一致してないとダメ
-    alpha = fg_alpha[:,:,3]  # アルファチャンネルだけ抜き出す(要は2値のマスク画像)
-    alpha = cv2.cvtColor(alpha, cv2.COLOR_GRAY2BGR) # grayをBGRに
-    alpha = alpha / 255.0    # 0.0〜1.0の値に変換
-
-    fg = fg_alpha[:,:,:3]
-
-    f_h, f_w, _ = fg.shape # アルファ画像の高さと幅を取得
-    #b_h, b_w, _ = bg.shape # 背景画像の高さを幅を取得
-
-    # 画像の大きさと開始座標を表示
-    #print("f_w:{} f_h:{} b_w:{} b_h:{} s({}, {})".format(f_w, f_h, b_w, b_h, s_x, s_y))
-
-    bg[s_y:f_h+s_y, s_x:f_w+s_x] = (bg[s_y:f_h+s_y, s_x:f_w+s_x] * (1.0 - alpha)).astype('uint8') # アルファ以外の部分を黒で合成
-    bg[s_y:f_h+s_y, s_x:f_w+s_x] = (bg[s_y:f_h+s_y, s_x:f_w+s_x] + (fg * alpha)).astype('uint8')  # 合成
-
-    return bg
-
-
-
-
-def camera():
-        cap = cv2.VideoCapture(0)#("IMG_1908.MOV") #video from camera
+def play_game():
+        
+        cap = cv2.VideoCapture(0) #video from camera
         capShark = cv2.VideoCapture("videos/shark.mp4") #video of Shark
         imgDH = cv2.imread('graphic/imgDH_180.png',-1)
         smile_count = 0
@@ -144,87 +125,107 @@ def camera():
         pygame.mixer.music.set_volume(0.3)
 
         while True:
+
             ret, frame = cap.read()
-            retS, imgS = capShark.read()
             img = cv2.resize(frame,(960,510)) 
             img = cv2.flip(img, 1) #mirror the camera to make it like a mirror
-
+            retS, imgS = capShark.read()
             frame_num = capShark.get(cv2.CAP_PROP_POS_FRAMES)
-            #print(frame_num)
 
             if retS == False: #when the shark video is done
                 capShark.set(cv2.CAP_PROP_POS_FRAMES,0) #it sets back the video
                 retS, imgS = capShark.read() #and reads it again
-
+                smileframe = -40
 
             faces = facial_recognition(face_detector,img)
-
-            if len(faces) > 0:
-                if frame_num > 280 and frame_num < 380:
-                    play_the_shark_attack()
-                    break
-                elif frame_num > 1020 and frame_num < 1150:  
-                    play_the_shark_attack()
-                    break
+            if check_if_shark(faces,frame_num) is True:
+                play_the_shark_attack(face_detector,imgDH,cascade_smile,smile_count,smilewait)
+                break
                 
-                imgS, smile_count, smilewait, screenshot = multiple_faces(faces,img,imgS,cascade_smile,imgDH,smile_count, smilewait)
-                    
-            if screenshot == True:
-                smileframe = capShark.get(cv2.CAP_PROP_POS_FRAMES)
-                #print("Screenshot true")
 
-            if (capShark.get(cv2.CAP_PROP_POS_FRAMES)) == smileframe or (capShark.get(cv2.CAP_PROP_POS_FRAMES)) < smileframe + 30:
-                imgH, imgW = imgS.shape[:2]
-                position = [imgW//2,imgH//2]
-                fontPIL = 'DoHyeon-Regular.ttf'
-                text = "Took Screenshot!"
-                imgS = cv2_putText_5(img = imgS,text = text,org = position,fontFace = fontPIL,fontScale = 60,color = (255, 255, 255),mode = 2)
+            for i, face in enumerate(faces):
 
-                   
+                trim = trim_the_detected_face(face,img)
+                imgS = put_displays_all_together(imgDH,imgS,trim,i)
+                smiles = smile_recognition(img,cascade_smile,face)
+
+                if len(smiles) > 0 :
+                    smile_count, smilewait, screenshot = smile_screenshot(smile_count,smilewait,imgS)
+                    if time.time() - smilewait[smile_count-1] < 2:
+                        imgS = cv2_putText_5(img = imgS,text = "Took Screenshot!",position=[2,2],fontScale = 60,color = (255, 255, 255),mode = 2)
+                        
+
+
             cv2.imshow('Shark',imgS)
 
             key = cv2.waitKey(1) & 0xFF #waits for the key command
             if key == ord('q'): #when q is pressed, it quits the while loop
                 break
 
+
         cap.release()
         cv2.destroyAllWindows()
 
+ 
+
+def check_if_shark(faces,frame_num):
+    if len(faces) > 0:
+        if frame_num > 280 and frame_num < 380:
+            return True
+        elif frame_num > 1020 and frame_num < 1150:  
+            return True
+    else :
+        return False
+
+                   
 
 
 
-def play_the_shark_attack():
+def play_the_shark_attack(face_detector,imgDH,cascade_smile,smile_count,smilewait):
+    screenshot = False
+    smileframe = -40
     capAttack = cv2.VideoCapture("videos/shark_attack.mp4")
-    #capAttack.set(cv2.CAP_PROP_FPS, 30)
+    cap = cv2.VideoCapture(0) #video from camera
+
     
     pygame.mixer.music.load("music/se_bukimi2-1.mp3") #bgm 
     pygame.mixer.music.play(0) #-1 means infinite loop
     pygame.mixer.music.set_volume(0.2)
 
-    #fps = capAttack.get(cv2.CAP_PROP_FPS)
-    #print(fps)
 
     while True:
 
         retA, imgA = capAttack.read()
+        ret, frame = cap.read()
+        img = cv2.resize(frame,(960,510)) 
+        img = cv2.flip(img, 1) #mirror the camera to make it like a mirror
         
         if retA == False: #when the shark video is done
-                break
-        
-        imgH, imgW = imgA.shape[:2]
-        position = [imgW//2,imgH//4]
-        fontPIL = 'DoHyeon-Regular.ttf'
-        size = 60
-        text = "Found By Shark!"
-        color = (85, 84, 234) #RGBではなくBGR234, 84, 85)
-
-        imgA = cv2_putText_5(img = imgA,text = text,org = position,fontFace = fontPIL,fontScale = size,color = color,mode = 2)
-        
-        if retA == False: 
             break
+
+        faces = facial_recognition(face_detector,img)
+
+
+        for i, face in enumerate(faces):
+
+            trim = trim_the_detected_face(face,img)
+            imgA = put_displays_all_together(imgDH,imgA,trim,i)
+            smiles = smile_recognition(img,cascade_smile,face)
+
+            if len(smiles) > 0 :
+                smile_count, smilewait, screenshot = smile_screenshot(smile_count,smilewait,imgA)
+                if time.time() - smilewait[smile_count-1] < 2:
+                    imgA = cv2_putText_5(img = imgA,text = "Took Screenshot!",position=[2,2],fontScale = 60,color = (255, 255, 255),mode = 2)
+        
+
+        imgA = cv2_putText_5(img = imgA,text = "Found By Shark!",position = [2,4],fontScale = 60,color = (85, 84, 234),mode = 2) #RGBではなくBGR234, 84, 85)
+    
         
         cv2.imshow('GameOver',imgA)
-        cv2.waitKey(30)
+
+        key = cv2.waitKey(1) & 0xFF #waits for the key command
+        if key == ord('q'): #when q is pressed, it quits the while loop
+            break
 
     capAttack.release()
     cv2.destroyAllWindows()
@@ -232,49 +233,25 @@ def play_the_shark_attack():
 
 
 
-def multiple_faces(faces,img,imgS,cascade_smile,imgDH,smile_count, smilewait):
-    i = 0
-    screenshot = False
-
-    for face in faces:
-        #print(i)
-        #print(face)
-        trim = trim_the_detected_face(face,img)
-        imgS = put_displays_all_together(imgDH,imgS,trim,i)
-        smiles = smile_recognition(img,cascade_smile,face)
-        #print(smiles)
-        
-        smiles = smiles if smiles is not None else []
-        if len(smiles) > 0 :
-            smile_count, smilewait, screenshot = smile_screenshot(smiles,face,smile_count,smilewait,imgS)
-
-        i = i + 1
-        
-    return imgS, smile_count, smilewait, screenshot
-
-
-
-
 def trim_the_detected_face(face,img):
             
-            x = int(face[0])
-            y = int(face[1])
-            w = int(face[2])
-            h = int(face[3])
+    x = int(face[0])
+    y = int(face[1])
+    w = int(face[2])
+    h = int(face[3])
 
-            trim = img[y:y+h,x:x+w]   # range of x and y of face rectangle 
-            
-            if np.any(trim) :
-                trim = cv2.resize(trim,(100,100))  #resize the window for the face
-                
-            return trim
+    trim = img[y:y+h,x:x+w]   # range of x and y of face rectangle 
+    
+    if np.any(trim) :
+        trim = cv2.resize(trim,(100,100))  #resize the window for the face
+        
+    return trim
 
 
 
-def smile_screenshot(smiles,face,smile_count,smilewait,imgS):
+def smile_screenshot(smile_count,smilewait,imgS):
 
-    #print(smile_count)
-    #print(smilewait)
+
     screenshot = False
 
     if smile_count == 0: #when its the first smile, it just takes the screenshot
@@ -291,12 +268,6 @@ def smile_screenshot(smiles,face,smile_count,smilewait,imgS):
         #print("smiled")
         screenshot = True
 
-    """
-    for(sx,sy,sw,sh) in smiles:
-        x = face[0]
-        y = face[1]
-        #cv2.circle(imgS,(int(x+sx+sw/2),int(y+sy+sh/2)),int(sw/2),(0, 0, 255),2)#red
-    """
 
     return smile_count, smilewait, screenshot
 
@@ -313,18 +284,19 @@ def facial_recognition(face_detector,img):
 
 def smile_recognition(img,cascade_smile,face):
             
-            x = int(face[0])
-            y = int(face[1])
-            w = int(face[2])
-            h = int(face[3])
-
-            roi = img[y:y+h, x:x+w] #for the smile recognition
-            if np.any(roi):
-                roi_gray = cv2.cvtColor(roi, cv2.COLOR_BGR2GRAY) #gray scale video for recognition
-                smiles = cascade_smile.detectMultiScale(roi_gray,scaleFactor= 1.2, minNeighbors=30, minSize=(100, 100))#笑顔識別
-
-                return smiles
-
+    x = int(face[0])
+    y = int(face[1])
+    w = int(face[2])
+    h = int(face[3])
+    roi = img[y:y+h, x:x+w] #for the smile recognition
+    
+    if np.any(roi):
+        roi_gray = cv2.cvtColor(roi, cv2.COLOR_BGR2GRAY) #gray scale video for recognition
+        smiles = cascade_smile.detectMultiScale(roi_gray,scaleFactor= 1.2, minNeighbors=30, minSize=(100, 100))#笑顔識別
+        return smiles
+    
+    smiles = smiles if smiles is not None else []
+    return smiles
 
 
 
@@ -348,12 +320,30 @@ def put_displays_all_together(imgDH,imgS,trim,i):
     return imgS
      
 
+def merge_images(bg, fg_alpha, s_x, s_y): #2つの画像のサイズが一致してないとダメ
+    alpha = fg_alpha[:,:,3]  # アルファチャンネルだけ抜き出す(要は2値のマスク画像)
+    alpha = cv2.cvtColor(alpha, cv2.COLOR_GRAY2BGR) # grayをBGRに
+    alpha = alpha / 255.0    # 0.0〜1.0の値に変換
+
+    fg = fg_alpha[:,:,:3]
+
+    f_h, f_w, _ = fg.shape # アルファ画像の高さと幅を取得
 
 
+    bg[s_y:f_h+s_y, s_x:f_w+s_x] = (bg[s_y:f_h+s_y, s_x:f_w+s_x] * (1.0 - alpha)).astype('uint8') # アルファ以外の部分を黒で合成
+    bg[s_y:f_h+s_y, s_x:f_w+s_x] = (bg[s_y:f_h+s_y, s_x:f_w+s_x] + (fg * alpha)).astype('uint8')  # 合成
 
-def cv2_putText_5(img, text, org, fontFace, fontScale, color, mode=0):
-# cv2.putText()にないオリジナル引数「mode」　orgで指定した座標の基準
-# 0（デフォ）＝cv2.putText()と同じく左下　1＝左上　2＝中央
+    return bg
+
+
+def cv2_putText_5(img, text, position, fontScale, color, mode=0):
+
+    fontFace = 'DoHyeon-Regular.ttf'
+    imgH, imgW = img.shape[:2]
+    org = [imgW//(position[0]),imgH//(position[1])]
+
+    # cv2.putText()にないオリジナル引数「mode」　orgで指定した座標の基準
+    # 0（デフォ）＝cv2.putText()と同じく左下　1＝左上　2＝中央
 
     # テキスト描写域を取得
     fontPIL = ImageFont.truetype(font = fontFace, size = fontScale)
