@@ -12,6 +12,7 @@ Those startpage(), camera(), show_page(), show_screenshot(), functions will show
 attack_shark() is called from play_game() when its game over.
 """
 
+
 def main(): #this main is in charge of showing the displays, and after pressing Q in those displays, they will come back here.
 
     pygame.mixer.init() #initial music function
